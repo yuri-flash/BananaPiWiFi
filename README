@@ -1,0 +1,100 @@
+Initializing a Build Environment
+The environment setting up has been tested under Ubuntu 12.04 Desktop and Ubuntu 14.04 Sever.
+
+Install JDK on PC
+sudo apt-get install software-properties-common
+sudo add-apt-repository ppa:webupd8team/java
+sudo apt-get update
+sudo apt-get install oracle-java6-installer
+Install Essential Packages
+Install some packages:
+
+sudo apt-get install git gnupg flex bison gperf build-essential \
+  zip curl libc6-dev libncurses5-dev:i386 x11proto-core-dev \
+  libx11-dev:i386 libreadline6-dev:i386 libgl1-mesa-glx:i386 \
+  libgl1-mesa-dev g++-multilib mingw32 tofrodos \
+  python-markdown libxml2-utils xsltproc zlib1g-dev:i386
+Link the libGL library:
+
+sudo ln -s /usr/lib/i386-linux-gnu/mesa/libGL.so.1 /usr/lib/i386-linux-gnu/libGL.so
+Attention
+1. Sometimes, when we use Ubuntu 12.04 Desktop, we may encounter that the desktop GUI is missing after we set up the Android environment. We need fix this:
+
+sudo apt-get install ubuntu-desktop xorg
+
+2. Under Ubuntu 14.04 Sever, we may also need to install:
+
+sudo apt-get install libswitch-perl u-boot-tools
+Download Android SDK
+At current, we can only get Android 4.2 SDK for Banana Pro/Pi Download the Android 4.2 SDK for Banana Pro/Pi from the Cloud:
+Baidu Cloud: download link 
+Goodle Drive: download link 
+Github: Github Page 
+Extract the files in the download package:
+
+xz -d BP_Android.tar.xz
+tar -xvf BP_Android.tar
+We can see two directory in BP_Andoird: android and lichee. The content in the android directory is the source code for android system.
+The content in the lichee directory contains the kernel, u-boot, toolchain and some other tools maybe needed.
+Build lichee packages
+First we need compile the kernel and uboot. They are in lichee directory. Enter the lichee directory:
+
+cd BP_Android/lichee/
+And then compile:
+
+./build.sh -p sun7i_android
+After the first compile, we need upgrade the kernel configuration to open some drivers such as GMAC:
+
+cd linux-3.4
+cp arch/arm/configs-config .config
+After this, you can also tweak the kernel as you like:
+
+make ARCH=arm menuconfig
+and then save it.
+
+Compile the kernel again to make the added drivers work:
+
+cd ..
+./build.sh -p sun7i_android
+After all is ready, you will find a directory named out appear under lichee directory. In it, there are files needed by Android system, when we compile the android source code, these files in out directory will be copied into Android.
+
+Build Android
+Enter the android directory:
+
+cd ../android
+Configure the compile environment:
+
+source build/envsetup.sh
+Select the right project for Banana Pro/Pi. We have a default project called sugar-lemaker:
+
+lunch
+it will let you enter a number for the project. The sugar_lemaker-eng is 16 by default. 
+And then:
+
+extract-bsp
+make
+You can also use make -jN, N represents the core of your host PC. This will take some hours depends on your PC performance.(My ThinkPad T440 takes about 80 minutes, and my Dell sever takes about 50 minutes). After build, you can pack the system to form a Android image file:
+
+pack
+And then, you can find the compiled image file under /lichee/tools/pack called sun7i_android_sugar-lemaker.img . 
+When building Android, it also produce a new folder called out under android directory.
+
+Burn the Android image
+After all compiling process, you can burn the new image created by yourself into SD card with PhoenixCard tool. More information please see: Burn Android Firmware For Banana Pro／Pi.
+
+Useful files for customize your Android system
+Under android/devices/softwinner , there are three folders specially related to our Banana Pro/Pi android project:
+common
+wing-common
+sugar-lemaker
+We eventually use the files in the sugar-lemaker. sugar-lemaker depends on wing-common, wing-common depends on common.
+The specific files or floders may be useful:
+
+sugar-lemaker/sugar_lemaker.mk
+sugar-lemaker/BoardConfig.mk
+sugar-lemaker/init.sun7i.rc
+sugar-lemaker/camera.cfg
+sugar-lemaker/vold.fstab
+wing-common/ProductCommon.mk
+wing-common/apk
+wing-common/preinstallapk
